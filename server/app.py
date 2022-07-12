@@ -14,12 +14,27 @@ app.secret_key = os.urandom(12)
 def main():
     return "IT Works!"
 
-@app.route('/image', methods=['POST'])
-def put_image():
-    
+@app.route('/ddr', methods=['POST'])
+def get_images():
     pass
 
+@app.route('/ddr', methods=['GET'])
+def return_tags(): 
+    pass
 
+"""
+POST로 이미지를 받고, id를 반환
+GET으로 id를 받고, 참/거짓 반환
+>> 참일시 이미지와 태그를 반환
+{
+    "status": 200,
+    "tags": {
+        "general": [["girl", 0.5], ["catear", 0.3]],
+        "character": "kaffu_chino",
+        "rating": "safe"
+    }
+}
+"""
 
 if __name__ == '__main__':
     app.debug = True
