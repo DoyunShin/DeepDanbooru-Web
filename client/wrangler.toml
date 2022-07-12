@@ -1,0 +1,5 @@
+name = "DeepDanbooru Web"
+main = "src/index.ts"
+compatibility_date = "2022-07-12"
+workers_dev = true
+
