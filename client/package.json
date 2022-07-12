@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/DoyunShin/DeepDanbooru-Web/issues"
   },
-  "homepage": "https://github.com/DoyunShin/DeepDanbooru-Web#readme"
+  "homepage": "https://github.com/DoyunShin/DeepDanbooru-Web#readme",
+  "dependencies": {
+    "wrangler": "^2.0.17"
+  }
 }
