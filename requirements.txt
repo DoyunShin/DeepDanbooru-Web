@@ -1,0 +1,4 @@
+flask
+flask_compress
+tensorflow
+tensorflow_io
