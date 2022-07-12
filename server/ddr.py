@@ -11,10 +11,6 @@ class eval(Exception):
         import deepdanbooru
         import json
         import time
-        
-        
-
-        #pass
 
         self.tf = tensorflow
         self.tfio = tensorflow_io
@@ -24,8 +20,6 @@ class eval(Exception):
         self.dd = deepdanbooru
         self.sha256 = sha256
 
-        
-        
 
         self.config = dummy()
         self.data = dummy()
@@ -53,13 +47,13 @@ class eval(Exception):
     
     def check_config(self):
         self.modelPath = self.Path(self.config.model_path)
-        if self.modelPath.exists() == False: raise Exception("model not found")
+        if self.modelPath.exists() == False: raise FileNotFoundError("Model not found")
         self.tagPath = self.Path(self.config.tag_path)
-        if self.tagPath.exists() == False: raise Exception("tag not found")
+        if self.tagPath.exists() == False: raise FileNotFoundError("Tags not found")
         self.tagGeneralPath = self.Path(self.config.tag_general_path)
-        if self.tagGeneralPath.exists() == False: raise Exception("tag general not found")
+        if self.tagGeneralPath.exists() == False: raise FileNotFoundError("tag general not found")
         self.tagCharacterPath = self.Path(self.config.tag_character_path)
-        if self.tagCharacterPath.exists() == False: raise Exception("tag character not found")
+        if self.tagCharacterPath.exists() == False: raise FileNotFoundError("tag character not found")
 
         self.workPath = self.Path(self.config.work_path)
         self.workPath.mkdir(parents=True, exist_ok=True)
@@ -67,20 +61,21 @@ class eval(Exception):
         self.imagePath = self.workPath / "images"
         self.imagePath.mkdir(exist_ok=True)
 
-        if self.config.threshold < 0 or self.config.threshold > 1: raise Exception("threshold must be between 0 and 1")
+        if self.config.threshold < 0 or self.config.threshold > 1: raise ValueError("threshold must be between 0 and 1")
         pass
 
     def load_database(self):
         dataPath = self.workPath / "database.json"
-        if dataPath.exists() == False:
+        if dataPath.exists():
+            f = open(dataPath, "r", encoding="utf-8")
+            self.database = self.json.load(f)
+            f.close()
+        else:
             f = open(dataPath, "w", encoding="utf-8")
             f.write("{}")
             f.close()
             self.database = {}
-        else:
-            f = open(dataPath, "r", encoding="utf-8")
-            self.database = self.json.load(f)
-            f.close()
+
         pass
 
     def save_database(self):
