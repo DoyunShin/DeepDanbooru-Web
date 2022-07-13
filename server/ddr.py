@@ -4,21 +4,16 @@ class dummy():
 
 class DDRWEB(Exception):
     def __init__(self):
-        from hashlib import sha256
-        from pathlib import Path
-        import tensorflow
-        import tensorflow_io
-        import deepdanbooru
-        import json
-        import time
+        import importlib
 
-        self.tf = tensorflow
-        self.tfio = tensorflow_io
-        self.json = json
-        self.Path = Path
-        self.time = time
-        self.dd = deepdanbooru
-        self.sha256 = sha256
+        self.importlib = importlib
+        self.modules = dummy()
+        self.modules.sha256 = importlib.import_module("hashlib.sha256")
+        self.modules.tf = importlib.import_module("tensorflow")
+        self.modules.tf_io = importlib.import_module("tensorflow_io")
+        self.modules.dd = importlib.import_module("deepdanbooru")
+        self.modules.json = importlib.import_module("json")
+        self.Path = importlib.import_module("pathlib.Path")
 
 
         self.config = dummy()
@@ -46,14 +41,14 @@ class DDRWEB(Exception):
         self.check_config()
     
     def check_config(self):
-        self.modelPath = self.Path(self.config.model_path)
-        if self.modelPath.exists() == False: raise FileNotFoundError("Model not found")
-        self.tagPath = self.Path(self.config.tag_path)
-        if self.tagPath.exists() == False: raise FileNotFoundError("Tags not found")
-        self.tagGeneralPath = self.Path(self.config.tag_general_path)
-        if self.tagGeneralPath.exists() == False: raise FileNotFoundError("tag general not found")
-        self.tagCharacterPath = self.Path(self.config.tag_character_path)
-        if self.tagCharacterPath.exists() == False: raise FileNotFoundError("tag character not found")
+        self.config.modelPath = self.Path(self.config.model_path)
+        if self.config.modelPath.exists() == False: raise FileNotFoundError("Model not found")
+        self.config.tagPath = self.Path(self.config.tag_path)
+        if self.config.tagPath.exists() == False: raise FileNotFoundError("Tag file not found")
+        self.config.tagGeneralPath = self.Path(self.config.tag_general_path)
+        if self.config.tagGeneralPath.exists() == False: raise FileNotFoundError("Tag general file not found")
+        self.config.tagCharacterPath = self.Path(self.config.tag_character_path)
+        if self.config.tagCharacterPath.exists() == False: raise FileNotFoundError("Tag character file not found")
 
         self.workPath = self.Path(self.config.work_path)
         self.workPath.mkdir(parents=True, exist_ok=True)
@@ -92,7 +87,7 @@ class DDRWEB(Exception):
 
     def load_data(self):
         # model
-        self.data.model = self.tf.keras.models.load_model(self.config.model, compile=False)
+        self.data.model = self.modules.tf.keras.models.load_model(self.config.model, compile=False)
 
         # tags
         self.data.tags = dummy()
@@ -106,14 +101,14 @@ class DDRWEB(Exception):
 
 
 
-    def eval_image(self, image: bytes):
-        image_path = self.imagePath / self.sha256(image).hexdigest()+".png"
-        with open(image_path, "wb") as image_stream:
+    def eval_image(self, image: bytes, imgid: str):
+        #sha256(image).hexdigest()
+        with open(self.imagePath / imgid+".png", "wb") as image_stream:
             image_stream.write(image)
         width = self.data.model.input_shape[2]
         height = self.data.model.input_shape[1]
         
-        image = self.dd.data.load_image_for_evaluate(image, width=width, height=height)
+        image = self.modules.dd.data.load_image_for_evaluate(image, width=width, height=height)
         image_shape = image.shape
         image = image.reshape((1, image_shape[0], image_shape[1], image_shape[2]))
         y = self.data.model.predict(image)[0]
@@ -144,7 +139,7 @@ class DDRWEB(Exception):
         raiting = sort_rating[0][0]
         character = sort_character[0][0]
 
-        self.save_imgdata(image_path.name, sort_general, character, raiting)
+        self.save_imgdata(imgid, sort_general, character, raiting)
 
 
         return sort_general, character, raiting
