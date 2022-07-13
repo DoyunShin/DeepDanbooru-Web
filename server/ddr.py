@@ -2,7 +2,7 @@ class dummy():
     def __init__(self):
         pass
 
-class eval(Exception):
+class DDRWEB(Exception):
     def __init__(self):
         from hashlib import sha256
         from pathlib import Path
