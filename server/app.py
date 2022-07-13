@@ -16,6 +16,8 @@ class Storage():
         self.importlib.reload(self.modules.ddr)
         pass
 
+    def parse_image(self):
+        pass
 
         
 from flask import *
@@ -27,6 +29,8 @@ compress = Compress()
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+
 @app.route('/')
 def main():
     #return 404 not found
@@ -34,6 +38,13 @@ def main():
 
 @app.route('/ddr', methods=['POST'])
 def get_images():
+
+    # Get files image
+    # Multipath
+
+    req = request.json
+    
+    
 
     status = 200
     message = "OK"
