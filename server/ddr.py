@@ -3,7 +3,9 @@ class dummy():
         pass
 
 class DDRWEB(Exception):
-    def __init__(self):
+    def __init__(self, storage):
+        self.storage = storage
+
         import importlib
 
         self.importlib = importlib
@@ -80,8 +82,8 @@ class DDRWEB(Exception):
         f.close()
         pass
 
-    def save_imgdata(self, image_name, sort_general, character, raiting):
-        self.database.update({image_name: {"general": sort_general, "character": character, "raiting": raiting}})
+    def save_imgdata(self, image_name, sort_general, character, rating):
+        self.database.update({image_name: {"general": sort_general, "character": character, "rating": rating}})
         self.save_database()
         pass
 
@@ -97,9 +99,6 @@ class DDRWEB(Exception):
             self.data.tags.general = [tag for tag in (tag.strip() for tag in tags_stream) if tag]
         with open(self.config.tag_character_path, "r", encoding="utf-8") as tags_stream:
             self.data.tags.character = [tag for tag in (tag.strip() for tag in tags_stream) if tag]
-
-
-
 
     def eval_image(self, image: bytes, imgid: str):
         #sha256(image).hexdigest()
@@ -122,24 +121,25 @@ class DDRWEB(Exception):
         sort_rating = {}
         sort_character = {}
 
+        # update with list
         for tag in self.data.tags.all:
             if "rating:" in tag:
-                sort_rating.update({tag: result_dict[tag]})
+                sort_rating.update({tag: list(result_dict[tag])})
+                #sort_rating.update({tag: result_dict[tag]})
             elif tag in self.data.tags.character:
-                sort_character.update({tag: result_dict[tag]})
+                sort_character.update({tag: list(result_dict[tag])})
             elif result_dict[tag] >= self.config.threshold:
-                sort_general.update({tag: result_dict[tag]})
+                sort_general.update({tag: list(result_dict[tag])})
         
         sort_general = sorted(sort_general.items(), key=lambda x: x[1], reverse=True)
         sort_character = sorted(sort_character.items(), key=lambda x: x[1], reverse=True)
         sort_rating = sorted(sort_rating.items(), key=lambda x: x[1], reverse=True)
         #[('rating:safe', 1.5022916e-08), ('rating:explicit', 1.4161448e-08), ('rating:questionable', 1.4002417e-08)]
-        #for tag, score in sort:
-        #    yield tag, score
-        raiting = sort_rating[0][0]
-        character = sort_character[0][0]
 
-        self.save_imgdata(imgid, sort_general, character, raiting)
+        self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0])
+
+        self.storage.threads.pop(imgid)
+        return
 
 
-        return sort_general, character, raiting
+        #return sort_general, character, rating
