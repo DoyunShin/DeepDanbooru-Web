@@ -15,7 +15,7 @@ class DDRWEB(Exception):
         self.modules.tf_io = importlib.import_module("tensorflow_io")
         self.modules.dd = importlib.import_module("deepdanbooru")
         self.modules.json = importlib.import_module("json")
-        self.Path = importlib.import_module("pathlib.Path")
+        self.Path = importlib.import_module("pathlib").Path
 
 
         self.config = dummy()
