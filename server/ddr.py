@@ -15,7 +15,7 @@ class DDRWEB(Exception):
         self.modules.tf_io = importlib.import_module("tensorflow_io")
         self.modules.dd = importlib.import_module("deepdanbooru")
         self.modules.json = importlib.import_module("json")
-        self.Path = importlib.import_module("pathlib").Path
+        self.Path = importlib.import_module("pathlib.Path")
 
 
         self.config = dummy()
@@ -29,8 +29,11 @@ class DDRWEB(Exception):
         pass
 
     def load_config(self):
+        configPath = self.workPath / "config.json"
+        if not configPath.exists():
+            raise FileNotFoundError("Config file not found. Please move a config_example file.")
         f = open("config.json", "r", encoding="utf-8")
-        config = self.json.load(f)
+        config = self.modules.json.load(f)
         f.close()
         
         self.config.model_path = self.Path(config["model_path"])
