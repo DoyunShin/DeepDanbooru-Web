@@ -82,7 +82,9 @@ def get_images():
         return {"status": 400, "message": "File not found"}, 400
 
     image = request.files.get('file')
-    if image.filename.split('.')[-1] not in ALLOWED_EXTENSIONS:
+    # not check capital letter
+    # check allwd extension
+    if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
         return {"status": 400, "message": "File extension not allowed"}, 400
 
     image_binary = image.read()
@@ -96,9 +98,10 @@ def get_images():
 
 @app.route('/api/ddr', methods=['GET'])
 def return_tags(): 
-    if ('id' not in request.args) and ('id' not in request.json):
-        return {"status": 400, "message": "ID not found"}, 400
+
     try:
+        if ('id' not in request.args) and ('id' not in request.json):
+            return {"status": 400, "message": "ID not found"}, 400
         imgid = request.args['id']
     except:
         try:
@@ -109,12 +112,40 @@ def return_tags():
     if storage.check_eval_end(imgid) is None:
         return {"status": 500, "message": "Internal server error. Cannot find id in work and database."}, 500
     elif storage.check_eval_end(imgid) is False:
-        #102 Image is still processing
-        return {"status": 102, "message": "Image is still processing"}, 102
+        #202 Image is still processing
+        return {"status": 202, "message": "Image is still processing"}, 202
     else:
-        return {"status": 200, "message": "OK", "data": storage.get_eval_result(imgid).update({"image": storage.get_image(imgid)})}, 200
+        #return {"status": 202, "message": "Image is still processing"}, 202
+        rtndata = {}
+        rtndata.update(storage.get_eval_result(imgid))
+        rtndata.update({"image": storage.get_image(imgid)})
+        rtndata.update({"id": imgid})
+        return {"status": 200, "message": "OK", "data": rtndata}, 200
 
     pass
+
+@app.route('/api/ddr_img', methods=['GET'])
+def return_image():
+    try:
+        if ('id' not in request.args) and ('id' not in request.json):
+            return {"status": 400, "message": "ID not found"}, 400
+        imgid = request.args['id']
+    except:
+        try:
+            imgid = request.json['id']
+        except:
+            return {"status": 400, "message": "ID not found"}, 400
+    
+    if storage.check_eval_end(imgid) is None:
+        return {"status": 500, "message": "Internal server error. Cannot find id in work and database."}, 500
+    # return raw file
+    f = open(storage.modules.ddr.imagePath / (imgid + ".png"), "rb")
+    rtn = f.read()
+    f.close()
+    return Response(rtn, mimetype="image/png")
+
+    pass
+
 
 @app.route('/api/module_reload', methods=['GET'])
 def module_reload():

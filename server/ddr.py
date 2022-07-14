@@ -150,7 +150,7 @@ class DDRWEB(Exception):
             sort_general.append([str(tag_gen), float(rate)])
             
 
-        self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0])
+        self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0].replace("rating:", ""))
 
         self.storage.threads.pop(imgid)
         return
