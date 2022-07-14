@@ -1,3 +1,6 @@
+from matplotlib.animation import ImageMagickWriter
+
+
 class dummy():
     def __init__(self):
         pass
@@ -29,7 +32,7 @@ class DDRWEB(Exception):
         pass
 
     def load_config(self):
-        configPath = self.workPath / "config.json"
+        configPath = self.Path(".") / "config.json"
         if not configPath.exists():
             raise FileNotFoundError("Config file not found. Please move a config_example file.")
         f = open("config.json", "r", encoding="utf-8")
@@ -47,7 +50,7 @@ class DDRWEB(Exception):
     
     def check_config(self):
         self.config.modelPath = self.Path(self.config.model_path)
-        if self.config.modelPath.exists() == False: raise FileNotFoundError("Model not found")
+        if self.config.model_path.exists() == False: raise FileNotFoundError("Model not found")
         self.config.tagPath = self.Path(self.config.tag_path)
         if self.config.tagPath.exists() == False: raise FileNotFoundError("Tag file not found")
         self.config.tagGeneralPath = self.Path(self.config.tag_general_path)
@@ -68,7 +71,7 @@ class DDRWEB(Exception):
         dataPath = self.workPath / "database.json"
         if dataPath.exists():
             f = open(dataPath, "r", encoding="utf-8")
-            self.database = self.json.load(f)
+            self.database = self.modules.json.load(f)
             f.close()
         else:
             f = open(dataPath, "w", encoding="utf-8")
@@ -81,7 +84,7 @@ class DDRWEB(Exception):
     def save_database(self):
         dataPath = self.workPath / "database.json"
         f = open(dataPath, "w", encoding="utf-8")
-        self.json.dump(self.database, f, ensure_ascii=False, indent=4)
+        self.modules.json.dump(self.database, f, ensure_ascii=False, indent=4)
         f.close()
         pass
 
@@ -92,21 +95,24 @@ class DDRWEB(Exception):
 
     def load_data(self):
         # model
-        self.data.model = self.modules.tf.keras.models.load_model(self.config.model, compile=False)
+        self.data.model = self.modules.tf.keras.models.load_model(self.config.modelPath, compile=False)
 
         # tags
         self.data.tags = dummy()
-        with open(self.config.tag_path, "r", encoding="utf-8") as tags_stream:
+        with open(self.config.tagPath, "r", encoding="utf-8") as tags_stream:
             self.data.tags.all = [tag for tag in (tag.strip() for tag in tags_stream) if tag]
-        with open(self.config.tag_general_path, "r", encoding="utf-8") as tags_stream:
+        with open(self.config.tagGeneralPath, "r", encoding="utf-8") as tags_stream:
             self.data.tags.general = [tag for tag in (tag.strip() for tag in tags_stream) if tag]
-        with open(self.config.tag_character_path, "r", encoding="utf-8") as tags_stream:
+        with open(self.config.tagCharacterPath, "r", encoding="utf-8") as tags_stream:
             self.data.tags.character = [tag for tag in (tag.strip() for tag in tags_stream) if tag]
 
-    def eval_image(self, image: bytes, imgid: str):
+    def eval_image(self, image, imgid: str):
         #sha256(image).hexdigest()
-        with open(self.imagePath / imgid+".png", "wb") as image_stream:
-            image_stream.write(image)
+        image_name = imgid + ".png"
+        img_path = self.imagePath / image_name
+        #f = open(, "rb")
+        #image = f.read()
+        #f.close()
         width = self.data.model.input_shape[2]
         height = self.data.model.input_shape[1]
         
@@ -127,22 +133,24 @@ class DDRWEB(Exception):
         # update with list
         for tag in self.data.tags.all:
             if "rating:" in tag:
-                sort_rating.update({tag: list(result_dict[tag])})
+                sort_rating.update({tag: result_dict[tag]})
                 #sort_rating.update({tag: result_dict[tag]})
             elif tag in self.data.tags.character:
-                sort_character.update({tag: list(result_dict[tag])})
+                sort_character.update({tag: result_dict[tag]})
             elif result_dict[tag] >= self.config.threshold:
-                sort_general.update({tag: list(result_dict[tag])})
+                sort_general.update({tag: result_dict[tag]})
         
-        sort_general = sorted(sort_general.items(), key=lambda x: x[1], reverse=True)
+        sort_general_list = sorted(sort_general.items(), key=lambda x: x[1], reverse=True)
         sort_character = sorted(sort_character.items(), key=lambda x: x[1], reverse=True)
         sort_rating = sorted(sort_rating.items(), key=lambda x: x[1], reverse=True)
         #[('rating:safe', 1.5022916e-08), ('rating:explicit', 1.4161448e-08), ('rating:questionable', 1.4002417e-08)]
+
+        sort_general = []
+        for tag_gen, rate in sort_general_list:
+            sort_general.append([str(tag_gen), float(rate)])
+            
 
         self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0])
 
         self.storage.threads.pop(imgid)
         return
-
-
-        #return sort_general, character, rating
