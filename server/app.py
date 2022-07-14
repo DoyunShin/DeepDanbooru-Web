@@ -55,7 +55,7 @@ compress = Compress()
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 
 @app.route('/')
 def main():
@@ -68,13 +68,24 @@ def get_images():
         return Response({"status": 400, "message": "File not found"}, status=400, mimetype="application/json")
     elif request.files['file'].filename == '':
         return Response({"status": 400, "message": "File not found"}, status=400, mimetype="application/json")
-    image = request.files['file']
-    #Check extension
-    if image.filename.split('.')[-1] not in ALLOWED_EXTENSIONS:
-        return Response({"status": 400, "message": "File extension not allowed"}, status=400, mimetype="application/json")
-    
-    # get image as binary
-    image_binary = image.read()
+    # check request.json["file"]
+    elif 'file' not in request.json:
+        return Response({"status": 400, "message": "File not found"}, status=400, mimetype="application/json")
+
+    try:
+        image = request.files['file']
+        # Check extension
+        if image.filename.split('.')[-1] not in ALLOWED_EXTENSIONS:
+            return Response({"status": 400, "message": "File extension not allowed"}, status=400, mimetype="application/json")
+        # get image as binary
+        image_binary = image.read()
+    except:
+        try:
+            image_binary = request.json['file']
+        except:
+            return Response({"status": 400, "message": "File not found"}, status=400, mimetype="application/json")
+
+    # Create image id
     imgid = sha256(image_binary).hexdigest()
 
 
@@ -89,11 +100,15 @@ def return_tags():
     try:
         imgid = request.args['id']
     except:
-        imgid = request.json['id']
+        try:
+            imgid = request.json['id']
+        except:
+            return Response({"status": 400, "message": "ID not found"}, status=400, mimetype="application/json")
+    
     if storage.check_eval_end(imgid) is None:
         return Response({"status": 500, "message": "Internal server error. Cannot find id in work and database."}, status=500, mimetype="application/json")
     elif storage.check_eval_end(imgid) is False:
-        return Response({"status": 400, "message": "Image is still processing"}, status=400, mimetype="application/json")
+        return Response({"status": 102, "message": "Image is still processing"}, status=400, mimetype="application/json")
     else:
         return Response({"status": 200, "message": "OK", "data": storage.get_eval_result(imgid), "image": storage.get_image(imgid)}, status=200, mimetype="application/json")
 
