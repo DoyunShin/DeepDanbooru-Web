@@ -129,13 +129,17 @@ GET으로 id를 받고, 참/거짓 반환
 POST
 {
     "status": 200,
-    "id": "SHA256"
+    "message": "OK",
+    "data": {
+        "id": "SHA256"
+    }
 }
 
 GET
 {
     "status": 200,
-    "tags": {
+    "message": "OK",
+    "data": {
         "general": [["girl", 0.5], ["catear", 0.3]],
         "character": "kaffu_chino",
         "rating": "safe"
