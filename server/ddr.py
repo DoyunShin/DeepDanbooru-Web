@@ -10,12 +10,12 @@ class DDRWEB(Exception):
 
         self.importlib = importlib
         self.modules = dummy()
-        self.modules.sha256 = importlib.import_module("hashlib.sha256")
+        self.modules.sha256 = importlib.import_module("hashlib").sha256
         self.modules.tf = importlib.import_module("tensorflow")
         self.modules.tf_io = importlib.import_module("tensorflow_io")
         self.modules.dd = importlib.import_module("deepdanbooru")
         self.modules.json = importlib.import_module("json")
-        self.Path = importlib.import_module("pathlib.Path")
+        self.Path = importlib.import_module("pathlib").Path
 
 
         self.config = dummy()
