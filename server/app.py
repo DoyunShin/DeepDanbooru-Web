@@ -112,7 +112,7 @@ def return_tags():
         #102 Image is still processing
         return {"status": 102, "message": "Image is still processing"}, 102
     else:
-        return {"status": 200, "message": "OK", "data": storage.get_eval_result(imgid), "image": storage.get_image(imgid)}, 200
+        return {"status": 200, "message": "OK", "data": storage.get_eval_result(imgid).update({"image": storage.get_image(imgid)})}, 200
 
     pass
 
