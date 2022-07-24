@@ -146,9 +146,7 @@ def return_imglist():
 @app.route('/api/ddr_imglist_html', methods=['GET'])
 def return_imglist_html():
     html = ""
-    keys = storage.modules.ddr.database.keys()
-    keys.sort()
-    for imgid in keys:
+    for imgid in sorted(storage.modules.ddr.database.keys()):
         html += '<a href="/api/ddr_img?id=' + imgid + '" target="_blank">' + imgid + '</a><br>'
     return html
 
