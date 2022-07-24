@@ -47,6 +47,7 @@ from flask_compress import Compress
 from hashlib import sha256
 from flask_cors import CORS
 import os
+import requests
 from PIL import Image
 import io
 
@@ -76,15 +77,29 @@ def get_images():
     else:
         return {"status": 400, "message": "File not found"}, 400
 
-    image = request.files.get('file')
+    try:
+        image = request.files.get('file')
+        if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
+            return {"status": 400, "message": "File extension not allowed"}, 400
+        image_binary = image.read()
+        imgid = sha256(image_binary).hexdigest()
+    except:
+        if request.json["file"]["type"] == "base64":
+            image_binary = storage.modules.base64.b64decode(request.json["file"]["data"])
+            imgid = sha256(image_binary).hexdigest()
+        elif request.json["file"]["type"] == "url":
+            rtn = requests.get(request.json["file"]["data"])
+            if rtn.status_code != 200:
+                return {"status": 400, "message": "File not found"}, 400
+            image_binary = rtn.content
+            imgid = sha256(image_binary).hexdigest()
+        elif request.json["file"]["type"] == "binary":
+            image_binary = request.json["file"]["data"]
+            imgid = sha256(image_binary).hexdigest()
+    
+    
     # not check capital letter
     # check allwd extension
-    if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
-        return {"status": 400, "message": "File extension not allowed"}, 400
-
-    image_binary = image.read()
-    imgid = sha256(image_binary).hexdigest()
-
     timg = Image.open(io.BytesIO(image_binary))
     timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
     storage.parse_image(io.BytesIO(image_binary), imgid)
