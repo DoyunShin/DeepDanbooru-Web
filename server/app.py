@@ -68,23 +68,26 @@ def main():
 
 @app.route('/api/ddr', methods=['POST'])
 def get_images():
-    if 'file' in request.files:
+    typ = ""
+    try:
+        if ('file' in request.files): typ = "file"
+    except:
         pass
-    elif request.files['file'].filename != '':
+    try:
+        if 'file' in request.json: typ = "json"
+    except:
         pass
-    # check request.json["file"]
-    elif 'file' in request.json:
-        pass
-    else:
+
+    if typ == "":
         return {"status": 400, "message": "File not found"}, 400
 
-    try:
+    if typ == "file":
         image = request.files.get('file')
         if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
             return {"status": 400, "message": "File extension not allowed"}, 400
         image_binary = image.read()
         imgid = sha256(image_binary).hexdigest()
-    except:
+    elif typ == "json":
         if request.json["file"]["type"] == "base64":
             image_binary = storage.modules.base64.b64decode(request.json["file"]["data"])
             imgid = sha256(image_binary).hexdigest()
@@ -108,17 +111,17 @@ def get_images():
 
 @app.route('/api/ddr_bulk', methods=['POST'])
 def get_bulk_images():
-    if 'file' in request.files:
-        typ = "file"
+    typ = ""
+    try:
+        if ('file' in request.files): typ = "file"
+    except:
         pass
-    elif request.files['file'].filename != '':
-        typ = "file"
+    try:
+        if 'file' in request.json: typ = "json"
+    except:
         pass
-    # check request.json["file"]
-    elif 'file' in request.json:
-        typ = "json"
-        pass
-    else:
+
+    if typ == "":
         return {"status": 400, "message": "File not found"}, 400
 
     ok = 0
