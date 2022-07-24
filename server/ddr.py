@@ -1,6 +1,3 @@
-from matplotlib.animation import ImageMagickWriter
-
-
 class dummy():
     def __init__(self):
         pass
@@ -18,6 +15,7 @@ class DDRWEB(Exception):
         self.modules.tf_io = importlib.import_module("tensorflow_io")
         self.modules.dd = importlib.import_module("deepdanbooru")
         self.modules.json = importlib.import_module("json")
+        self.modules.time = importlib.import_module("time")
         self.Path = importlib.import_module("pathlib").Path
 
 
@@ -30,6 +28,21 @@ class DDRWEB(Exception):
         self.load_data()
         self.load_database()
         pass
+
+    def dba(self):
+        self.dbqueue = []
+        work = False
+        while True:
+            if len(self.dbqueue) != 0:
+                work = True
+                queue = self.dbqueue.pop(0)
+                self.database.update(queue)
+            
+            if (work == True) and (len(self.dbqueue) == 0):
+                self.save_database()
+                work = False
+            
+            if work == False: self.modules.time.sleep(1)
 
     def load_config(self):
         configPath = self.Path(".") / "config.json"
@@ -89,7 +102,7 @@ class DDRWEB(Exception):
         pass
 
     def save_imgdata(self, image_name, sort_general, character, rating):
-        self.database.update({image_name: {"general": sort_general, "character": character, "rating": rating}})
+        self.dbqueue.append({image_name: {"general": sort_general, "character": character, "rating": rating}})
         self.save_database()
         pass
 
@@ -150,7 +163,8 @@ class DDRWEB(Exception):
             sort_general.append([str(tag_gen), float(rate)])
             
 
-        self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0].replace("rating:", ""))
+        #self.save_imgdata(imgid, sort_general, sort_character[0][0], sort_rating[0][0].replace("rating:", ""))
+        self.dbqueue.append({imgid: {"general": sort_general, "character": sort_character[0][0], "rating": sort_rating[0][0].replace("rating:", "")}})
 
         self.storage.threads.pop(imgid)
         return
