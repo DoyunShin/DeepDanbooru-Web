@@ -156,6 +156,14 @@ def module_reload():
 def return_imglist():
     return {"status": 200, "message": "OK", "data": storage.modules.ddr.database.keys()}
 
+@app.route('/api/ddr_imglist_html', methods=['GET'])
+def return_imglist_html():
+    html = ""
+    for imgid in storage.modules.ddr.database.keys():
+        # a href with new tab
+        html += '<a href="/api/ddr_img?id=' + imgid + '" target="_blank">' + imgid + '</a><br>'
+    return html
+
 """
 POST로 이미지를 받고, id를 반환
 GET으로 id를 받고, 참/거짓 반환
