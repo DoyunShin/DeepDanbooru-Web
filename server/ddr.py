@@ -10,23 +10,25 @@ class DDRWEB(Exception):
 
         self.importlib = importlib
         self.modules = dummy()
+
+        self.modules.Thread = importlib.import_module("threading").Thread
         self.modules.sha256 = importlib.import_module("hashlib").sha256
-        self.modules.tf = importlib.import_module("tensorflow")
         self.modules.tf_io = importlib.import_module("tensorflow_io")
         self.modules.dd = importlib.import_module("deepdanbooru")
+        self.modules.tf = importlib.import_module("tensorflow")
         self.modules.json = importlib.import_module("json")
         self.modules.time = importlib.import_module("time")
         self.Path = importlib.import_module("pathlib").Path
 
-
         self.config = dummy()
-        self.data = dummy()
-
-        
+        self.data = dummy()        
 
         self.load_config()
         self.load_data()
         self.load_database()
+
+        self.dbadmin = self.modules.Thread(target=self.dba)
+        self.dbadmin.start()
         pass
 
     def dba(self):
@@ -35,7 +37,7 @@ class DDRWEB(Exception):
         while True:
             if len(self.dbqueue) != 0:
                 work = True
-                
+
                 queue = self.dbqueue.pop(0)
                 self.database.update(queue)
             

@@ -47,6 +47,7 @@ from flask_compress import Compress
 from hashlib import sha256
 from flask_cors import CORS
 import os
+from pyparsing import ParseExpression
 import requests
 from PIL import Image
 import io
@@ -107,7 +108,15 @@ def get_images():
 
 @app.route('/api/ddr_bulk', methods=['POST'])
 def get_bulk_images():
-    if 'file' in request.json:
+    if 'file' in request.files:
+        typ = "file"
+        pass
+    elif request.files['file'].filename != '':
+        typ = "file"
+        pass
+    # check request.json["file"]
+    elif 'file' in request.json:
+        typ = "json"
         pass
     else:
         return {"status": 400, "message": "File not found"}, 400
@@ -115,49 +124,71 @@ def get_bulk_images():
     ok = 0
     failed = 0
     failed_list = []
-    if request.json["file"]["type"] == "base64":
-        for image_base64 in request.json["file"]["data"]:
-            image_binary = storage.modules.base64.b64decode(image_base64)
-            imgid = sha256(image_binary).hexdigest()
-            try:
-                timg = Image.open(io.BytesIO(image_binary))
-                timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
-                storage.parse_image(io.BytesIO(image_binary), imgid)
-                ok += 1
-            except:
+    ok_list = []
+    if typ == "file":
+        for image in request.files.getlist('file'):
+            if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
                 failed += 1
-                failed_list.append(imgid)
-    elif request.json["file"]["type"] == "url":
-        for image_url in request.json["file"]["data"]:
-            rtn = requests.get(image_url)
-            if rtn.status_code != 200:
-                failed_list.append(image_url)
-                failed += 1
+                failed_list.append(image.filename)
                 continue
-            image_binary = rtn.content
+            image_binary = image.read()
             imgid = sha256(image_binary).hexdigest()
             try:
                 timg = Image.open(io.BytesIO(image_binary))
                 timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
                 storage.parse_image(io.BytesIO(image_binary), imgid)
+                ok_list.append(imgid)
+                ok += 1
+            except:
+                failed += 1
+                failed_list.append(image.filename)
+    elif typ == "json":
+        if request.json["file"]["type"] == "base64":
+            for image_base64 in request.json["file"]["data"]:
+                image_binary = storage.modules.base64.b64decode(image_base64)
+                imgid = sha256(image_binary).hexdigest()
+                try:
+                    timg = Image.open(io.BytesIO(image_binary))
+                    timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
+                    storage.parse_image(io.BytesIO(image_binary), imgid)
+                    ok_list.append(imgid)
+                    ok += 1
+                except:
+                    failed += 1
+                    failed_list.append(imgid)
+        elif request.json["file"]["type"] == "url":
+            for image_url in request.json["file"]["data"]:
+                rtn = requests.get(image_url)
+                if rtn.status_code != 200:
+                    failed_list.append(image_url)
+                    failed += 1
+                    continue
+                image_binary = rtn.content
+                imgid = sha256(image_binary).hexdigest()
+                try:
+                    timg = Image.open(io.BytesIO(image_binary))
+                    timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
+                    storage.parse_image(io.BytesIO(image_binary), imgid)
+                    ok_list.append(imgid)
+                    ok += 1
+                except:
+                    failed += 1
+                    failed_list.append(imgid)
+        elif request.json["file"]["type"] == "binary":
+            image_binary = request.json["file"]["data"]
+            imgid = sha256(image_binary).hexdigest()
+            try:
+                timg = Image.open(io.BytesIO(image_binary))
+                timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
+                storage.parse_image(io.BytesIO(image_binary), imgid)
+                ok_list.append(imgid)
                 ok += 1
             except:
                 failed += 1
                 failed_list.append(imgid)
-    elif request.json["file"]["type"] == "binary":
-        image_binary = request.json["file"]["data"]
-        imgid = sha256(image_binary).hexdigest()
-        try:
-            timg = Image.open(io.BytesIO(image_binary))
-            timg.save(storage.modules.ddr.imagePath / (imgid + ".png"), "PNG")
-            storage.parse_image(io.BytesIO(image_binary), imgid)
-            ok += 1
-        except:
-            failed += 1
-            failed_list.append(imgid)
 
     if failed == 0:
-        return {"status": 200, "message": "OK", "data": {"ok": ok, "failed": failed}}, 200
+        return {"status": 200, "message": "OK", "data": {"ok": ok, "ok_list": ok_list}}, 200
     else:
         return {"status": 500, "message": "Something Failed", "data": {"ok": ok, "failed": failed, "failed_list": failed_list}}, 500
 
