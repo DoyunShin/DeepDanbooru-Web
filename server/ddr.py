@@ -35,12 +35,17 @@ class DDRWEB(Exception):
         while True:
             if len(self.dbqueue) != 0:
                 work = True
+                
                 queue = self.dbqueue.pop(0)
                 self.database.update(queue)
             
             if (work == True) and (len(self.dbqueue) == 0):
-                self.save_database()
                 work = False
+
+                dataPath = self.workPath / "database.json"
+                f = open(dataPath, "w", encoding="utf-8")
+                self.modules.json.dump(self.database, f, ensure_ascii=False, indent=4)
+                f.close()
             
             if work == False: self.modules.time.sleep(1)
 
@@ -92,13 +97,6 @@ class DDRWEB(Exception):
             f.close()
             self.database = {}
 
-        pass
-
-    def save_database(self):
-        dataPath = self.workPath / "database.json"
-        f = open(dataPath, "w", encoding="utf-8")
-        self.modules.json.dump(self.database, f, ensure_ascii=False, indent=4)
-        f.close()
         pass
 
     def save_imgdata(self, image_name, sort_general, character, rating):
