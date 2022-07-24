@@ -132,7 +132,7 @@ def get_bulk_images():
         for image in request.files.getlist('file'):
             if image.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
                 failed += 1
-                failed_list.append(image.filename)
+                failed_list.append({image.filename: "File extension not allowed"})
                 continue
             image_binary = image.read()
             imgid = sha256(image_binary).hexdigest()
@@ -142,9 +142,10 @@ def get_bulk_images():
                 storage.parse_image(io.BytesIO(image_binary), imgid)
                 ok_list.append(imgid)
                 ok += 1
-            except:
+            except Exception as e:
                 failed += 1
-                failed_list.append(image.filename)
+                failed_list.append({imgid: str(e)})
+                continue
     elif typ == "json":
         if request.json["file"]["type"] == "base64":
             for image_base64 in request.json["file"]["data"]:
@@ -156,14 +157,15 @@ def get_bulk_images():
                     storage.parse_image(io.BytesIO(image_binary), imgid)
                     ok_list.append(imgid)
                     ok += 1
-                except:
+                except Exception as e:
                     failed += 1
-                    failed_list.append(imgid)
+                    failed_list.append({imgid: str(e)})
+                    continue
         elif request.json["file"]["type"] == "url":
             for image_url in request.json["file"]["data"]:
                 rtn = requests.get(image_url)
                 if rtn.status_code != 200:
-                    failed_list.append(image_url)
+                    failed_list.append({imgid: str(rtn.status_code)+" "+rtn.text})
                     failed += 1
                     continue
                 image_binary = rtn.content
@@ -174,9 +176,9 @@ def get_bulk_images():
                     storage.parse_image(io.BytesIO(image_binary), imgid)
                     ok_list.append(imgid)
                     ok += 1
-                except:
+                except Exception as e:
                     failed += 1
-                    failed_list.append(imgid)
+                    failed_list.append({imgid: str(e)})
         elif request.json["file"]["type"] == "binary":
             image_binary = request.json["file"]["data"]
             imgid = sha256(image_binary).hexdigest()
@@ -186,14 +188,14 @@ def get_bulk_images():
                 storage.parse_image(io.BytesIO(image_binary), imgid)
                 ok_list.append(imgid)
                 ok += 1
-            except:
+            except Exception as e:
                 failed += 1
-                failed_list.append(imgid)
+                failed_list.append({imgid: str(e)})
 
     if failed == 0:
         return {"status": 200, "message": "OK", "data": {"ok": ok, "ok_list": ok_list}}, 200
     else:
-        return {"status": 500, "message": "Something Failed", "data": {"ok": ok, "failed": failed, "failed_list": failed_list}}, 500
+        return {"status": 500, "message": "Something Failed", "data": {"ok": ok, "ok_list": ok_list, "failed": failed, "failed_list": failed_list}}, 500
 
 @app.route('/api/ddr', methods=['GET'])
 def return_tags(): 
@@ -245,7 +247,7 @@ def return_image():
 
 @app.route('/api/ddr_imglist', methods=['GET'])
 def return_imglist():
-    return {"status": 200, "message": "OK", "data": storage.modules.ddr.database.keys()}
+    return {"status": 200, "message": "OK", "data": list(storage.modules.ddr.database.keys())}
 
 @app.route('/api/ddr_imglist_html', methods=['GET'])
 def return_imglist_html():

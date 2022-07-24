@@ -38,7 +38,7 @@ class DDRWEB(Exception):
             if len(self.dbqueue) != 0:
                 work = True
                 queue = self.dbqueue.pop(0)
-                if queue.keys()[0] in self.database:
+                if list(queue.keys())[0] in self.database:
                     raise KeyError("Image already exists in database")
                     return
                 self.database.update(queue)
