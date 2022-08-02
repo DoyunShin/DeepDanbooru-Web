@@ -199,6 +199,7 @@ def get_bulk_images():
 
 @app.route('/api/ddr', methods=['GET'])
 def return_tags(): 
+    print(request.view_args)
 
     try:
         if ('id' not in request.args) and ('id' not in request.json):
@@ -218,9 +219,15 @@ def return_tags():
     else:
         #return {"status": 202, "message": "Image is still processing"}, 202
         rtndata = {}
+        
         rtndata.update(storage.get_eval_result(imgid))
         rtndata.update({"image": storage.get_image(imgid)})
         rtndata.update({"id": imgid})
+        lists = []
+        for i in storage.get_eval_result(imgid)["general"]:
+            lists.append(i)
+        rtndata.update({"general_list": lists})
+
         return {"status": 200, "message": "OK", "data": rtndata}, 200
 
     pass
